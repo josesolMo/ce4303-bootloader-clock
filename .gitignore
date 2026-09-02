@@ -67,3 +67,14 @@ vcpkg_installed/
 # test output & cache
 Testing/
 .cache/
+
+# Binaries ang bootloader images
+*.bin
+*.o
+*.elf
+*.img
+
+# Compilation and editor temporary files
+*~
+*.swp
+.DS_Store
