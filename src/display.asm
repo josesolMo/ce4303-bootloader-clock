@@ -38,13 +38,6 @@ draw_static_ui:
     mov si, msg_title
     call print_string
 
-    ; Dibujar Indicador de Modo (Fila 6, Columna 30)
-    mov dh, 6
-    mov dl, 30
-    call set_cursor
-    mov si, msg_mode_clock
-    call print_string
-
     ; Dibujar Menú de Controles al pie (Fila 21, Columna 20)
     mov dh, 21
     mov dl, 20
@@ -59,31 +52,42 @@ draw_static_ui:
 render_screen:
     pusha
 
+; Seleccionar la etiqueta del modo según VAR_MODE
+    mov dh, 6
+    mov dl, 30
+    call set_cursor
+
+    mov al, [VAR_MODE]
+    cmp al, 1
+    je .mode_sw
+    cmp al, 2
+    je .mode_alarm
+
+.mode_clock:
+    mov si, msg_mode_clock
+    call print_string
+    mov si, VAR_RTC_HOURS
+    jmp .draw_time
+
+.mode_sw:
+    mov si, msg_mode_sw
+    call print_string
+    mov si, VAR_SW_HOURS
+    jmp .draw_time
+
+.mode_alarm:
+    mov si, msg_mode_alarm
+    call print_string
+    mov si, VAR_ALARM_HOURS
+
+.draw_time:
     ; Posicionar cursor (Fila 11, Columna 36)
     mov dh, 11
     mov dl, 36
     call set_cursor
     
-    ; ---------------- Imprimir el placeholder ----------------
-    ;mov si, msg_time_placeholder
-    ;call print_string
-    ; ---------------------------------------------------------
-
-    ; Ejemplo: Imprimir "12:34:56" usando bytes BCD
-    mov al, 0x12
-    call print_bcd_byte
-
-    mov al, ':'
-    call print_char
-
-    mov al, 0x34
-    call print_bcd_byte
-
-    mov al, ':'
-    call print_char
-
-    mov al, 0x56
-    call print_bcd_byte
+    ; Dibujar tiempo (HH:MM:SS)
+    call print_time_triplet
 
     popa
     ret
@@ -97,12 +101,7 @@ draw_main_frame:
     mov al, 0xDA        ; Carácter '┌'
     call print_char
 
-    ; Línea superior (Columnas 1 a 78)
-    mov cx, 78
-.top_line:
-    mov al, 0xC4        ; Carácter '─'
-    call print_char
-    loop .top_line
+    call draw_horizontal_line ; Línea superior
 
     ; Esquina superior der (Fila 0, Columna 79)
     mov al, 0xBF        ; Carácter '┐'
@@ -136,16 +135,19 @@ draw_main_frame:
     mov al, 0xC0        ; Carácter '└'
     call print_char
 
-    ; Línea inferior (Columnas 1 a 78)
-    mov cx, 78
-.bottom_line:
-    mov al, 0xC4        ; Carácter '─'
-    call print_char
-    loop .bottom_line
+    call draw_horizontal_line ; Línea inferior
 
     ; Esquina inferior derecha (Fila 23, Columna 79)
     mov al, 0xD9        ; Carácter '┘'
     call print_char
+    ret
+
+draw_horizontal_line:
+    mov cx, 78
+.loop:
+    mov al, 0xC4
+    call print_char
+    loop .loop
     ret
 
 ; *** Subrutinas Auxiliares ***
@@ -163,6 +165,19 @@ hide_cursor:
     mov ch, 0x20        ; El bit 5 en 1 oculta el cursor físicamente
     int 0x10
     ret
+
+; Lee 3 bytes BCD consecutivos desde [SI] e imprime HH:MM:SS
+print_time_triplet:
+    lodsb
+    call print_bcd_byte
+    mov al, ':'
+    call print_char
+    lodsb
+    call print_bcd_byte
+    mov al, ':'
+    call print_char
+    lodsb
+    jmp print_bcd_byte       ; Salto directo al último byte
 
 ; Imprime el carácter guardado en AL usando el servicio teletype
 print_char:
@@ -188,29 +203,24 @@ print_bcd_byte:
     push ax                 ; Guarda AX para no alterar los datos del llamador
 
     ; Extraer dígito superior (Decenas)
-    mov ah, al
-    shr ah, 4               ; Desplaza el nibble alto a la derecha (0x42 -> 0x04)
-    add ah, '0'             ; Convierte a carácter ASCII (+0x30)
+    shr al, 4               ; Desplaza el nibble alto a la derecha (0x42 -> 0x04)
+    add al, '0'             ; Convierte a carácter ASCII (+0x30)
 
     ; Imprimir decenas
-    push ax
-    mov al, ah
     call print_char
     pop ax
 
     ; Extraer dígito inferior (Unidades)
     and al, 0x0F            ; Aísla los 4 bits bajos (0x42 -> 0x02)
     add al, '0'             ; Convierte a carácter ASCII (+0x30)
-    call print_char         ; Imprime unidades
-
-    pop ax                  ; Restaura el valor original de AX
-    ret
+    jmp print_char          ; Imprime unidades
 
 ; *** Cadenas de Texto de la Interfaz ***
-msg_welcome:          db "=== BOOTLOADER OS (TEC) ===", 13, 10, 10
+msg_welcome:          db "=== BOOTLOADER OS ===", 13, 10
                       db "Presione una tecla para iniciar...", 0
 
 msg_title:            db "SISTEMA OS: RELOJ Y CRONOMETRO", 0
-msg_mode_clock:       db "[ MODO: RELOJ RTC ]", 0
-msg_time_placeholder: db "12:34:56", 0
+msg_mode_clock:       db "[ MODO: RELOJ RTC  ]", 0
+msg_mode_sw:          db "[ MODO: CRONOMETRO ]", 0
+msg_mode_alarm:       db "[ MODO: ALARMA     ]", 0
 msg_menu:             db "[M] Modo  |  [A] Alarma  |  [R] Reset", 0
