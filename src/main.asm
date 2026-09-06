@@ -12,6 +12,7 @@ start:
     sti
 
     call show_welcome_screen ; Ejecuta pantalla de bienvenida
+    call draw_static_ui      ; Dibuja el marco y títulos una única vez
 
 ; Bucle principal de la aplicacion
 main_loop:
