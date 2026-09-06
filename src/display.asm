@@ -31,9 +31,9 @@ draw_static_ui:
     call hide_cursor
     call draw_main_frame
 
-    ; Dibujar Encabezado (Fila 2, Columna 25)
+    ; Dibujar Encabezado (Fila 2, Columna 27)
     mov dh, 2
-    mov dl, 25
+    mov dl, 31
     call set_cursor
     mov si, msg_title
     call print_string
@@ -81,18 +81,25 @@ render_screen:
     mov si, VAR_ALARM_HOURS
 
 .draw_time:
-    ; Posicionar cursor (Fila 11, Columna 36)
+    ; Configurar atributo de color/parpadeo para alarma
+    mov bl, 0x07                ; Atributo normal (Gris/Blanco sobre negro)
+    cmp byte [VAR_ALARM_TRIGGERED], 1
+    jne .print_t
+    mov bl, 0x8F                ; Efecto de Alarma: Parpadeo VGA (Bit 7 activado)
+
+.print_t:
+    ; Posicionar cursor (Fila 11, Columna 37)
     mov dh, 11
-    mov dl, 36
+    mov dl, 37
     call set_cursor
     
-    ; Dibujar tiempo (HH:MM:SS)
-    call print_time_triplet
+    ; Dibujar tiempo (HH:MM)
+    call print_time_pair
 
     popa
     ret
 
-; *** Rutina de Maquetado (Marco ASCII en CP437) ***
+; *** Rutina de ventana (Marco ASCII en CP437) ***
 draw_main_frame:
     ; Esquina superior izq (Fila 0, Columna 0)
     mov dh, 0
@@ -109,7 +116,7 @@ draw_main_frame:
 
     ; Líneas laterales
     mov bl, 1           ; Fila inicial
-.side_lines:
+.sides:
     ; Lateral izquierdo
     mov dh, bl
     mov dl, 0
@@ -126,7 +133,7 @@ draw_main_frame:
 
     inc bl
     cmp bl, 23
-    jb .side_lines
+    jb .sides
 
     ; Esquina inferior izquierda (Fila 23, Columna 0)
     mov dh, 23
@@ -166,18 +173,14 @@ hide_cursor:
     int 0x10
     ret
 
-; Lee 3 bytes BCD consecutivos desde [SI] e imprime HH:MM:SS
-print_time_triplet:
-    lodsb
+; Lee 2 bytes BCD e imprime HH:MM
+print_time_pair:
+    lodsb                       ; Carga horas
     call print_bcd_byte
     mov al, ':'
     call print_char
-    lodsb
-    call print_bcd_byte
-    mov al, ':'
-    call print_char
-    lodsb
-    jmp print_bcd_byte       ; Salto directo al último byte
+    lodsb                       ; Carga minutos
+    jmp print_bcd_byte          ; Imprime minutos y retorna
 
 ; Imprime el carácter guardado en AL usando el servicio teletype
 print_char:
@@ -217,9 +220,9 @@ print_bcd_byte:
 
 ; *** Cadenas de Texto de la Interfaz ***
 msg_welcome:          db "=== BOOTLOADER OS ===", 13, 10
-                      db "Presione una tecla para iniciar...", 0
+                      db "Presione una tecla...", 0
 
-msg_title:            db "SISTEMA OS: RELOJ Y CRONOMETRO", 0
+msg_title:            db "RELOJ Y CRONOMETRO", 0
 msg_mode_clock:       db "[ MODO: RELOJ RTC  ]", 0
 msg_mode_sw:          db "[ MODO: CRONOMETRO ]", 0
 msg_mode_alarm:       db "[ MODO: ALARMA     ]", 0
