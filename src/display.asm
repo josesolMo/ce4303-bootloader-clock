@@ -55,23 +55,35 @@ draw_static_ui:
     popa
     ret
 
-; Oculta el cursor parpadeante de texto VGA
-hide_cursor:
-    mov ah, 0x01
-    mov ch, 0x20        ; El bit 5 en 1 oculta el cursor físicamente
-    int 0x10
-    ret
-
 ; Actualiza únicamente los datos dinámicos en pantalla
 render_screen:
     pusha
 
-    ; Hora Placeholder (Fila 11, Columna 36)
+    ; Posicionar cursor (Fila 11, Columna 36)
     mov dh, 11
     mov dl, 36
     call set_cursor
-    mov si, msg_time_placeholder
-    call print_string
+    
+    ; ---------------- Imprimir el placeholder ----------------
+    ;mov si, msg_time_placeholder
+    ;call print_string
+    ; ---------------------------------------------------------
+
+    ; Ejemplo: Imprimir "12:34:56" usando bytes BCD
+    mov al, 0x12
+    call print_bcd_byte
+
+    mov al, ':'
+    call print_char
+
+    mov al, 0x34
+    call print_bcd_byte
+
+    mov al, ':'
+    call print_char
+
+    mov al, 0x56
+    call print_bcd_byte
 
     popa
     ret
@@ -145,6 +157,13 @@ set_cursor:
     int 0x10
     ret
 
+; Oculta el cursor parpadeante de texto VGA
+hide_cursor:
+    mov ah, 0x01
+    mov ch, 0x20        ; El bit 5 en 1 oculta el cursor físicamente
+    int 0x10
+    ret
+
 ; Imprime el carácter guardado en AL usando el servicio teletype
 print_char:
     mov ah, 0x0E
@@ -161,6 +180,30 @@ print_string:
     call print_char
     jmp .loop
 .done:
+    ret
+
+; Imprime un byte en formato BCD (ej: 0x42 -> imprime "42")
+; Entrada: AL = Byte en BCD
+print_bcd_byte:
+    push ax                 ; Guarda AX para no alterar los datos del llamador
+
+    ; Extraer dígito superior (Decenas)
+    mov ah, al
+    shr ah, 4               ; Desplaza el nibble alto a la derecha (0x42 -> 0x04)
+    add ah, '0'             ; Convierte a carácter ASCII (+0x30)
+
+    ; Imprimir decenas
+    push ax
+    mov al, ah
+    call print_char
+    pop ax
+
+    ; Extraer dígito inferior (Unidades)
+    and al, 0x0F            ; Aísla los 4 bits bajos (0x42 -> 0x02)
+    add al, '0'             ; Convierte a carácter ASCII (+0x30)
+    call print_char         ; Imprime unidades
+
+    pop ax                  ; Restaura el valor original de AX
     ret
 
 ; *** Cadenas de Texto de la Interfaz ***
