@@ -237,7 +237,7 @@ cancel_alarm:
 ; ______________________/ Mensajes \_______________________
 
 msg_alarm_prompt:
-    db "Ingrese alarma HHMM: ", 0
+    db "Alarma HHMM: ", 0
 
 msg_alarm_invalid:
     db "Hora invalida.", 0
