@@ -91,16 +91,11 @@ render_screen:
     mov dl, 37
     call set_cursor
 
-    ; ______/Verificar si la alarma está sonando \____________
-
     cmp byte [VAR_ALARM_TRIGGERED], 1
     je .alarm_clock
 
-    ; ______/Mostrar reloj normal \__________________________
-
-    call print_time_pair
-
-    ; ______/Borrar sexto carácter del cronómetro \__________
+    mov si, VAR_RTC_HOURS
+    call print_normal_time
 
     mov al, ' '
     call print_char
@@ -329,6 +324,80 @@ print_alarm_char:
 
     ret
 
+; ______________/ Mostrar Caracter Normal \__________________
+
+print_normal_char:
+
+    ; ______/Escribir carácter blanco sin parpadeo \_________
+
+    mov ah, 0x09
+    mov bh, 0x00
+    mov bl, 0x07            ; Blanco/gris normal
+    mov cx, 1
+
+    int 0x10
+
+    ; ______/Avanzar cursor manualmente \____________________
+
+    mov ah, 0x03
+    mov bh, 0x00
+    int 0x10
+
+    inc dl
+
+    mov ah, 0x02
+    mov bh, 0x00
+    int 0x10
+
+    ret
+
+; ______________/ Mostrar Hora Normal \_____________________
+; despues de que se muestra la alarma
+
+print_normal_time:
+
+    ; ______/Mostrar horas \_________________________________
+
+    lodsb
+
+    ; Decena
+    push ax
+    mov ah, al
+    shr al, 4
+    and al, 0x0F
+    add al, '0'
+    call print_normal_char
+    pop ax
+
+    ; Unidad
+    and al, 0x0F
+    add al, '0'
+    call print_normal_char
+
+    ; ______/Mostrar separador \_____________________________
+
+    mov al, ':'
+    call print_normal_char
+
+    ; ______/Mostrar minutos \_______________________________
+
+    lodsb
+
+    ; Decena
+    push ax
+    mov ah, al
+    shr al, 4
+    and al, 0x0F
+    add al, '0'
+    call print_normal_char
+    pop ax
+
+    ; Unidad
+    and al, 0x0F
+    add al, '0'
+    call print_normal_char
+
+    ret
 ; ______________/ Mostrar Cronómetro SS:MMM \________________
 
 print_stopwatch_time:
@@ -422,4 +491,3 @@ msg_mode_clock:       db "[ MODO: RELOJ RTC  ]", 0
 msg_mode_sw:          db "[ MODO: CRONOMETRO ]", 0
 msg_mode_alarm:       db "[ MODO: ALARMA     ]", 0
 msg_menu:             db "[M] Modo  |  [A] Alarma  |  [R] Reset", 0
-msg_alarm_triggered:  db "!!! ALARMA ACTIVA !!!", 0

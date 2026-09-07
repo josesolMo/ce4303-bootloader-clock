@@ -15,11 +15,6 @@ start:
 
     call show_welcome_screen ; Ejecuta pantalla de bienvenida
     call draw_static_ui      ; Dibuja el marco y títulos una única vez
-    
-    ; --- SIMULACIÓN DE PRUEBA ---
-    ;mov byte [VAR_RTC_HOURS], 0x12       ; Hora de prueba: 12 (BCD)
-    ;mov byte [VAR_RTC_MINS],  0x34       ; Minutos de prueba: 34 (BCD)
-    ;mov byte [VAR_ALARM_TRIGGERED], 1    ; 1 = Activa el parpadeo VGA en pantalla
 
 ; Bucle principal de la aplicacion
 main_loop:
