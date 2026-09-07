@@ -9,24 +9,28 @@ check_alarm_trigger:
     cmp byte [VAR_ALARM_ENABLED], 1
     jne .done
 
-    ; ______/Verificar si la alarma ya está sonando \________
+    ; ______/Verificar si la alarma ya fue activada \________
 
     cmp byte [VAR_ALARM_TRIGGERED], 1
     je .done
 
-    ; ______/Comparar hora y minutos \_______________________
+    ; ______/Comparar horas \_______________________________
 
     mov al, [VAR_RTC_HOURS]
     cmp al, [VAR_ALARM_HOURS]
     jne .done
 
+    ; ______/Comparar minutos \_____________________________
+
     mov al, [VAR_RTC_MINS]
     cmp al, [VAR_ALARM_MINS]
     jne .done
 
-    ; ______/Activar alarma \________________________________
+    ; ______/Activar estado de alarma \_____________________
 
     mov byte [VAR_ALARM_TRIGGERED], 1
+
+    ; ______/Activar speaker \______________________________
 
     call start_speaker
 
@@ -212,25 +216,27 @@ stop_speaker:
     ret
 
 
-; ___________________/ Cancelar Alarma \___________________
+;; ___________________/ Cancelar Alarma \____________________
 
 cancel_alarm:
 
     pusha
 
-    cmp byte [VAR_ALARM_TRIGGERED], 1
-    jne .done
+    ; ______/Detener speaker \_______________________________
 
     call stop_speaker
+
+    ; ______/Desactivar alarma \_____________________________
 
     mov byte [VAR_ALARM_TRIGGERED], 0
     mov byte [VAR_ALARM_ENABLED], 0
 
-.done:
+    ; ______/Regresar al modo reloj \________________________
+    
+    mov byte [VAR_MODE], 0
 
     popa
     ret
-
 
 ; ______________________/ Mensajes \_______________________
 
