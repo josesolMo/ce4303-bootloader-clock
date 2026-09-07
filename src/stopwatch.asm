@@ -201,6 +201,7 @@ reset_stopwatch:
     mov word [VAR_SW_LAST_LO], 0
     mov word [VAR_SW_LAST_HI], 0
     mov word [VAR_SW_TICK_ACC], 0
+    mov word [VAR_SW_MILLI], 0
 
     popa
     ret
