@@ -1,14 +1,16 @@
 [BITS 16]
-[ORG 0x7C00]
+[ORG 0x8000]
 
 start:
-    ; Configuración de segmentos y stack
+    ; Dejeamos que este stage tenga su propio entorno
     cli
-    mov ax, 0x0000
+
+    xor ax, ax
     mov ds, ax
     mov es, ax
     mov ss, ax
     mov sp, 0x7C00
+
     sti
 
     call show_welcome_screen ; Ejecuta pantalla de bienvenida
@@ -37,7 +39,3 @@ main_loop:
 %include "src/keyboard.asm"  ; Captura no bloqueante de teclado con INT 16h para alternar modos y comandos
 %include "src/stopwatch.asm" ; Lógica del cronómetro: conteo independiente de tiempo, pausa, reanudación y reinicio
 %include "src/alarm.asm"     ; Verificación de hora configurada, disparo de bocina (puertos 0x42/0x61) y parpadeo visual
-
-; Firma de arranque de 512 bytes
-times 510-($-$$) db 0
-dw 0xAA55
