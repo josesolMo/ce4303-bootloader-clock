@@ -67,34 +67,94 @@ render_screen:
     mov si, msg_mode_clock
     call print_string
     mov si, VAR_RTC_HOURS
-    jmp .draw_time
+    jmp .draw_clock
+
 
 .mode_sw:
     mov si, msg_mode_sw
     call print_string
-    mov si, VAR_SW_HOURS
-    jmp .draw_time
+    jmp .draw_stopwatch
+
 
 .mode_alarm:
     mov si, msg_mode_alarm
     call print_string
     mov si, VAR_ALARM_HOURS
+    jmp .draw_alarm
 
-.draw_time:
-    ; Configurar atributo de color/parpadeo para alarma
-    mov bl, 0x07                ; Atributo normal (Gris/Blanco sobre negro)
-    cmp byte [VAR_ALARM_TRIGGERED], 1
-    jne .print_t
-    mov bl, 0x8F                ; Efecto de Alarma: Parpadeo VGA (Bit 7 activado)
 
-.print_t:
-    ; Posicionar cursor (Fila 11, Columna 37)
+; ___________________/ Dibujar Reloj \_______________________
+
+.draw_clock:
+
     mov dh, 11
     mov dl, 37
     call set_cursor
-    
-    ; Dibujar tiempo (HH:MM)
+
+    ; ______/Verificar si la alarma está sonando \____________
+
+    cmp byte [VAR_ALARM_TRIGGERED], 1
+    je .alarm_clock
+
+    ; ______/Reloj normal \__________________________________
+
     call print_time_pair
+
+    jmp .done
+
+
+; ________________/ Reloj con Alarma \______________________
+
+.alarm_clock:
+
+    call print_alarm_time
+
+    jmp .done
+
+; ________________/ Dibujar Cronómetro \_____________________
+
+.draw_stopwatch:
+
+    mov dh, 11
+    mov dl, 37
+    call set_cursor
+
+    call print_stopwatch_time
+
+    jmp .done
+
+; ___________________/ Mostrar Alarma \_______________________
+
+; ___________________/ Dibujar Alarma \_____________________
+
+.draw_alarm:
+
+    mov dh, 11
+    mov dl, 37
+    call set_cursor
+
+    ; ______/Verificar si la alarma está sonando \____________
+
+    cmp byte [VAR_ALARM_TRIGGERED], 1
+    je .alarm_triggered
+
+    ; ______/Mostrar hora configurada normalmente \__________
+
+    call print_time_pair
+
+    jmp .done
+
+
+; ________________/ Mostrar Alarma Parpadeando \____________
+
+.alarm_triggered:
+
+    call print_alarm_time
+
+    jmp .done
+
+
+.done:
 
     popa
     ret
@@ -182,6 +242,128 @@ print_time_pair:
     lodsb                       ; Carga minutos
     jmp print_bcd_byte          ; Imprime minutos y retorna
 
+; ______________/ Mostrar Hora con Alarma \__________________
+
+print_alarm_time:
+
+    ; ______/Mostrar horas \_________________________________
+
+    lodsb
+
+    ; Decena
+    push ax
+    mov ah, al
+    shr al, 4
+    and al, 0x0F
+    add al, '0'
+    call print_alarm_char
+    pop ax
+
+    ; Unidad
+    and al, 0x0F
+    add al, '0'
+    call print_alarm_char
+
+    ; ______/Mostrar separador \_____________________________
+
+    mov al, ':'
+    call print_alarm_char
+
+    ; ______/Mostrar minutos \_______________________________
+
+    lodsb
+
+    ; Decena
+    push ax
+    mov ah, al
+    shr al, 4
+    and al, 0x0F
+    add al, '0'
+    call print_alarm_char
+    pop ax
+
+    ; Unidad
+    and al, 0x0F
+    add al, '0'
+    call print_alarm_char
+
+    ret
+
+; ______________/ Mostrar Caracter de Alarma \_______________
+
+print_alarm_char:
+
+    ; ______/Escribir carácter con color y parpadeo \________
+
+    mov ah, 0x09            ; BIOS: carácter + atributo
+    mov bh, 0x00            ; Página de video 0
+    mov bl, 0x8C            ; Parpadeo + rojo claro
+    mov cx, 1               ; Un carácter
+
+    int 0x10
+
+    ; ______/Avanzar cursor manualmente \____________________
+
+    mov ah, 0x03            ; BIOS: obtener posición del cursor
+    mov bh, 0x00
+    int 0x10
+
+    inc dl                  ; Siguiente columna
+
+    mov ah, 0x02            ; BIOS: colocar cursor
+    mov bh, 0x00
+    int 0x10
+
+    ret
+
+; ______________/ Mostrar Cronómetro SS:MMM \________________
+
+print_stopwatch_time:
+
+    ; ______/Mostrar segundos \______________________________
+
+    mov al, [VAR_SW_SECS]
+    call print_bcd_byte
+
+    ; ______/Mostrar separador \_____________________________
+
+    mov al, ':'
+    call print_char
+
+    ; ______/Cargar milisegundos \__________________________
+
+    mov ax, [VAR_SW_MILLI]
+
+    ; ______/Obtener centenas \_____________________________
+
+    mov bl, 100
+    div bl                  ; AL = centenas, AH = resto
+
+    mov dl, ah              ; Guardar el resto
+
+    add al, '0'
+    call print_char
+
+    ; ______/Obtener decenas \______________________________
+
+    mov al, dl
+    mov ah, 0
+    mov bl, 10
+    div bl                  ; AL = decenas, AH = unidades
+
+    mov dl, ah              ; Guardar unidades
+
+    add al, '0'
+    call print_char
+
+    ; ______/Obtener unidades \_____________________________
+
+    mov al, dl
+    add al, '0'
+    call print_char
+
+    ret
+
 ; Imprime el carácter guardado en AL usando el servicio teletype
 print_char:
     mov ah, 0x0E
@@ -227,3 +409,4 @@ msg_mode_clock:       db "[ MODO: RELOJ RTC  ]", 0
 msg_mode_sw:          db "[ MODO: CRONOMETRO ]", 0
 msg_mode_alarm:       db "[ MODO: ALARMA     ]", 0
 msg_menu:             db "[M] Modo  |  [A] Alarma  |  [R] Reset", 0
+msg_alarm_triggered:  db "!!! ALARMA ACTIVA !!!", 0
