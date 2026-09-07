@@ -96,9 +96,14 @@ render_screen:
     cmp byte [VAR_ALARM_TRIGGERED], 1
     je .alarm_clock
 
-    ; ______/Reloj normal \__________________________________
+    ; ______/Mostrar reloj normal \__________________________
 
     call print_time_pair
+
+    ; ______/Borrar sexto carácter del cronómetro \__________
+
+    mov al, ' '
+    call print_char
 
     jmp .done
 
@@ -108,6 +113,9 @@ render_screen:
 .alarm_clock:
 
     call print_alarm_time
+
+    mov al, ' '           ;Borrar sexto carácter (del cronómetro)
+    call print_char
 
     jmp .done
 
@@ -123,8 +131,6 @@ render_screen:
 
     jmp .done
 
-; ___________________/ Mostrar Alarma \_______________________
-
 ; ___________________/ Dibujar Alarma \_____________________
 
 .draw_alarm:
@@ -138,21 +144,28 @@ render_screen:
     cmp byte [VAR_ALARM_TRIGGERED], 1
     je .alarm_triggered
 
-    ; ______/Mostrar hora configurada normalmente \__________
+    ; ______/Mostrar hora configurada \_______________________
 
     call print_time_pair
+
+    ; ______/Borrar sexto carácter \_________________________
+
+    mov al, ' '
+    call print_char
 
     jmp .done
 
 
-; ________________/ Mostrar Alarma Parpadeando \____________
+; ________________/ Alarma Activada \_______________________
 
 .alarm_triggered:
 
     call print_alarm_time
 
-    jmp .done
+    mov al, ' '         ;borra el sexto caracter
+    call print_char     ;(del cronometro)
 
+    jmp .done
 
 .done:
 

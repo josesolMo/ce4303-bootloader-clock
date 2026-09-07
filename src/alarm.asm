@@ -216,7 +216,7 @@ stop_speaker:
     ret
 
 
-;; ___________________/ Cancelar Alarma \____________________
+; ___________________/ Cancelar Alarma \___________________
 
 cancel_alarm:
 
@@ -230,10 +230,6 @@ cancel_alarm:
 
     mov byte [VAR_ALARM_TRIGGERED], 0
     mov byte [VAR_ALARM_ENABLED], 0
-
-    ; ______/Regresar al modo reloj \________________________
-    
-    mov byte [VAR_MODE], 0
 
     popa
     ret
