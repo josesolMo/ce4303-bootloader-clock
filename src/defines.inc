@@ -26,6 +26,8 @@ VAR_SW_LAST_HI      equ 0x050E  ; Parte alta
 
 ; Ticks acumulados que todavía no completan un segundo
 VAR_SW_TICK_ACC     equ 0x0510
+; Milisegundos calculados a partir de los ticks restantes
+VAR_SW_MILLI        equ 0x0512
 
 
 ; _______________________/ Datos Alarma \_____________________

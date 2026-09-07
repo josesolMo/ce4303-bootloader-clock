@@ -53,7 +53,30 @@ update_stopwatch:
 
     div bx                  ; AX = segundos, DX = resto
 
+    ; ______/Guardar segundos temporalmente \________________
+
+    push ax
+
+    ; ______/Guardar ticks restantes \________________________
+
     mov [VAR_SW_TICK_ACC], dx
+
+    ; ______/Calcular milisegundos \__________________________
+
+    ; Resto * 1000 / 18 = milisegundos aproximados
+
+    mov ax, dx
+    mov bx, 1000
+    mul bx
+
+    mov bx, 18
+    div bx
+
+    mov [VAR_SW_MILLI], ax
+
+    ; ______/Recuperar segundos \____________________________
+
+    pop ax
 
     ; ______/Actualizar el cronómetro segundo por segundo \___
 
@@ -64,9 +87,8 @@ update_stopwatch:
 
 .add_seconds:
     call increment_stopwatch_second
-
     loop .add_seconds
-
+    
 .done:
     popa
     ret

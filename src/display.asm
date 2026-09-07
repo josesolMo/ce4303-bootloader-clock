@@ -67,34 +67,57 @@ render_screen:
     mov si, msg_mode_clock
     call print_string
     mov si, VAR_RTC_HOURS
-    jmp .draw_time
+    jmp .draw_clock
+
 
 .mode_sw:
     mov si, msg_mode_sw
     call print_string
-    mov si, VAR_SW_HOURS
-    jmp .draw_time
+    jmp .draw_stopwatch
+
 
 .mode_alarm:
     mov si, msg_mode_alarm
     call print_string
     mov si, VAR_ALARM_HOURS
+    jmp .draw_alarm
 
-.draw_time:
-    ; Configurar atributo de color/parpadeo para alarma
-    mov bl, 0x07                ; Atributo normal (Gris/Blanco sobre negro)
-    cmp byte [VAR_ALARM_TRIGGERED], 1
-    jne .print_t
-    mov bl, 0x8F                ; Efecto de Alarma: Parpadeo VGA (Bit 7 activado)
 
-.print_t:
-    ; Posicionar cursor (Fila 11, Columna 37)
+; ___________________/ Dibujar Reloj \________________________
+
+.draw_clock:
+
     mov dh, 11
     mov dl, 37
     call set_cursor
-    
-    ; Dibujar tiempo (HH:MM)
+
     call print_time_pair
+
+    jmp .done
+
+
+; ________________/ Dibujar Cronómetro \_____________________
+
+.draw_stopwatch:
+
+    mov dh, 11
+    mov dl, 37
+    call set_cursor
+
+    call print_stopwatch_time
+
+    jmp .done
+
+.draw_alarm:
+    mov dh, 11
+    mov dl, 37
+    call set_cursor
+    call print_time_pair
+
+    jmp .done
+
+
+.done:
 
     popa
     ret
@@ -182,6 +205,54 @@ print_time_pair:
     lodsb                       ; Carga minutos
     jmp print_bcd_byte          ; Imprime minutos y retorna
 
+; ______________/ Mostrar Cronómetro SS:MMM \________________
+
+print_stopwatch_time:
+
+    ; ______/Mostrar segundos \______________________________
+
+    mov al, [VAR_SW_SECS]
+    call print_bcd_byte
+
+    ; ______/Mostrar separador \_____________________________
+
+    mov al, ':'
+    call print_char
+
+    ; ______/Cargar milisegundos \__________________________
+
+    mov ax, [VAR_SW_MILLI]
+
+    ; ______/Obtener centenas \_____________________________
+
+    mov bl, 100
+    div bl                  ; AL = centenas, AH = resto
+
+    mov dl, ah              ; Guardar el resto
+
+    add al, '0'
+    call print_char
+
+    ; ______/Obtener decenas \______________________________
+
+    mov al, dl
+    mov ah, 0
+    mov bl, 10
+    div bl                  ; AL = decenas, AH = unidades
+
+    mov dl, ah              ; Guardar unidades
+
+    add al, '0'
+    call print_char
+
+    ; ______/Obtener unidades \_____________________________
+
+    mov al, dl
+    add al, '0'
+    call print_char
+
+    ret
+    
 ; Imprime el carácter guardado en AL usando el servicio teletype
 print_char:
     mov ah, 0x0E
