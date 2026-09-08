@@ -40,7 +40,7 @@ draw_static_ui:
 
     ; Dibujar Menú de Controles al pie (Fila 21, Columna 20)
     mov dh, 21
-    mov dl, 20
+    mov dl, 2
     call set_cursor
     mov si, msg_menu
     call print_string
@@ -486,8 +486,8 @@ print_bcd_byte:
 msg_welcome:          db "=== BOOTLOADER OS ===", 13, 10
                       db "Presione una tecla...", 0
 
-msg_title:            db "RELOJ Y CRONOMETRO", 0
+msg_title:            db "RELOJ Y CRONOMETRO                [Q] Reiniciar", 0
 msg_mode_clock:       db "[ MODO: RELOJ RTC  ]", 0
 msg_mode_sw:          db "[ MODO: CRONOMETRO ]", 0
 msg_mode_alarm:       db "[ MODO: ALARMA     ]", 0
-msg_menu:             db "[M] Modo  |  [A] Alarma  |  [R] Reset", 0
+msg_menu:             db "[Esc] Apagar Alarma  |  [M] Modo  |  [A] Alarma  |  [R] Reset  |  [_] Pausa", 0

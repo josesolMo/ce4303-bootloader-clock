@@ -103,12 +103,7 @@ check_keyboard:
 
 .exit:
 
-    popa
-
-    ; ______/Detener ejecución del programa \________________
-
-    cli
-    hlt
+    int 0x19                ; Reinicia el proceso de arranque de la BIOS
 
 .exit_loop:
     jmp .exit_loop
