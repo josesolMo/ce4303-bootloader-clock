@@ -75,7 +75,21 @@ msg_disk_error db "Error al cargar la aplicacion.", 0
 ; -------------------------------------------------------------
 APP_SECTORS equ 8
 
-; __________________/ Firma del Boot Stage \___________________
+; __________________/ Firma y Tabla de Particiones MBR \________
 
-times 510-($-$$) db 0
+; Relleno estricto hasta el byte 446 (Inicio de la Tabla de Particiones)
+times 446-($-$$) db 0
+
+; --- Partición 1 Activa / Booteable (16 Bytes) ---
+db 0x80                 ; 0x80 = Marcada como ACTIVA
+db 0x00, 0x02, 0x00     ; CHS inicio (Cabeza 0, Sector 2, Cilindro 0)
+db 0x06                 ; Tipo de sistema de archivos (FAT16)
+db 0x00, 0x08, 0x00     ; CHS fin
+dd 0x00000001           ; Sector LBA inicial
+dd 0x00000800           ; Cantidad de sectores
+
+; --- Particiones 2, 3 y 4 vacías (48 Bytes) ---
+times 48 db 0
+
+; --- Firma de Arranque BIOS (2 Bytes) ---
 dw 0xAA55
